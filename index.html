@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countdown Timer and Stopwatch</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f9;
+            flex-direction: column;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .timer, .stopwatch {
+            text-align: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            margin: 10px;
+            flex: 1;
+        }
+
+        h1 {
+            font-size: 24px;
+        }
+
+        #time-display, #stopwatch-display {
+            font-size: 48px;
+            margin: 20px 0;
+        }
+        #stopwatch-display{
+          margin: 50px 0;
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+            margin: 10px 0;
+            width: 150px;
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            width: 180px; /* Ensure buttons are aligned */
+        }
+
+        button:active {
+            background-color: #45a049;
+        }
+
+        button.disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Align buttons horizontally */
+        .buttons-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px; /* Space between buttons */
+        }
+
+        /* Additional space between stopwatch display and buttons */
+        .stopwatch .buttons-container {
+            margin-top: 76px; /* Add space between the display and buttons */
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Countdown Timer Section -->
+        <div class="timer">
+            <h1>Countdown Timer</h1>
+            <input type="number" id="set-time" placeholder="Set Time (min)" />
+            <div id="time-display">00:00:00</div>
+            <div class="buttons-container">
+                <button id="start-timer" class="disabled">Start Timer</button>
+                <button id="reset-timer">Reset Timer</button>
+            </div>
+        </div>
+
+        <!-- Stopwatch Section -->
+        <div class="stopwatch">
+            <h1>Stopwatch</h1>
+            <div id="stopwatch-display">00:00:00:00</div>
+            <div class="buttons-container">
+                <button id="start-stopwatch">Start Stopwatch</button>
+                <button id="reset-stopwatch">Reset Stopwatch</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Countdown Timer Logic
+        let countdown;
+        let timeLeft = 0; // Countdown starts from 0
+        let isTimerRunning = false;
+        let msLeft = 0;  // For milliseconds in countdown timer
+
+        const timeDisplay = document.getElementById('time-display');
+        const startTimerButton = document.getElementById('start-timer');
+        const resetTimerButton = document.getElementById('reset-timer');
+        const setTimeInput = document.getElementById('set-time');
+
+        // Format time as mm:ss:SS (with milliseconds)
+        function formatTime(seconds, milliseconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            const ms = Math.floor(milliseconds / 10); // Show milliseconds in tenths
+            return `${minutes < 10 ? '0' : ''}${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}:${ms < 10 ? '0' : ''}${ms}`;
+        }
+
+        function startCountdown() {
+            countdown = setInterval(() => {
+                if (msLeft > 0) msLeft--; // Decrease milliseconds first
+                if (msLeft === 0 && timeLeft > 0) {
+                    timeLeft--;
+                    msLeft = 99; // Reset milliseconds to 99 when seconds change
+                }
+
+                timeDisplay.textContent = formatTime(timeLeft, msLeft);
+                if (timeLeft <= 0 && msLeft <= 0) {
+                    clearInterval(countdown);
+                    alert("Time's up!");
+                    isTimerRunning = false;
+                    startTimerButton.classList.add('disabled');
+                }
+            }, 10); // Update every 10ms (for millisecond precision)
+        }
+
+        startTimerButton.addEventListener('click', () => {
+            if (!isTimerRunning && timeLeft > 0) {
+                startCountdown();
+                isTimerRunning = true;
+                startTimerButton.classList.add('disabled');
+            }
+        });
+
+        resetTimerButton.addEventListener('click', () => {
+            clearInterval(countdown);
+            isTimerRunning = false;
+            const minutes = parseInt(setTimeInput.value) || 0;
+            timeLeft = minutes * 60; // Convert minutes to seconds
+            msLeft = 0; // Reset milliseconds to 0
+            timeDisplay.textContent = formatTime(timeLeft, msLeft);
+            startTimerButton.classList.remove('disabled');
+        });
+
+        setTimeInput.addEventListener('input', () => {
+            const minutes = parseInt(setTimeInput.value) || 0;
+            timeLeft = minutes * 60; // Convert minutes to seconds
+            msLeft = 0; // Reset milliseconds to 0
+            timeDisplay.textContent = formatTime(timeLeft, msLeft);
+            startTimerButton.classList.remove('disabled');
+        });
+
+        // Stopwatch Logic
+        let stopwatchInterval;
+        let stopwatchTime = 0; // In seconds
+        let stopwatchMs = 0; // In milliseconds (tenths of seconds)
+
+        const stopwatchDisplay = document.getElementById('stopwatch-display');
+        const startStopwatchButton = document.getElementById('start-stopwatch');
+        const resetStopwatchButton = document.getElementById('reset-stopwatch');
+
+        // Format stopwatch time as hh:mm:ss:SS (with milliseconds)
+        function formatStopwatchTime(seconds, ms) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const remainingSeconds = seconds % 60;
+            return `${hours < 10 ? '0' : ''}${hours}:${minutes < 10 ? '0' : ''}${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}:${ms < 10 ? '0' : ''}${ms}`;
+        }
+
+        function startStopwatch() {
+            stopwatchInterval = setInterval(() => {
+                stopwatchMs++; // Increase milliseconds
+                if (stopwatchMs >= 100) { // Reset after 100ms
+                    stopwatchMs = 0;
+                    stopwatchTime++; // Increment seconds
+                }
+                stopwatchDisplay.textContent = formatStopwatchTime(stopwatchTime, stopwatchMs);
+            }, 10); // Update every 10ms for high precision stopwatch
+        }
+
+        startStopwatchButton.addEventListener('click', () => {
+            if (!stopwatchInterval) {
+                startStopwatch();
+                startStopwatchButton.textContent = "Pause Stopwatch";
+            } else {
+                clearInterval(stopwatchInterval);
+                stopwatchInterval = null;
+                startStopwatchButton.textContent = "Resume Stopwatch";
+            }
+        });
+
+        resetStopwatchButton.addEventListener('click', () => {
+            clearInterval(stopwatchInterval);
+            stopwatchInterval = null;
+            stopwatchTime = 0;
+            stopwatchMs = 0;
+            stopwatchDisplay.textContent = formatStopwatchTime(stopwatchTime, stopwatchMs);
+            startStopwatchButton.textContent = "Start Stopwatch";
+        });
+    </script>
+
+</body>
+</html>
